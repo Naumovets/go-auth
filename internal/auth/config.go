@@ -9,8 +9,6 @@ import (
 type Config struct {
 	refreshTokenSecretKey string `mapstructure:"REFRESH_TOKEN_SECRET"`
 	accessTokenSecretKey  string `mapstructure:"ACCESS_TOKEN_SECRET"`
-	GrpcAddress           string `mapstructure:"GRPC_ADDRESS"`
-	HttpAddress           string `mapstructure:"HTTP_ADDRESS"`
 }
 
 func NewConfig(path string) (Config, error) {

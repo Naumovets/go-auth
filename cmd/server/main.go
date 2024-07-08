@@ -18,6 +18,11 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+const (
+	httpAddress = "0.0.0.0:8080"
+	grpcAddress = "0.0.0.0:50051"
+)
+
 func main() {
 
 	pgCfg, err := postgres.NewConfig(".env")
@@ -64,7 +69,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 
-		if err := startHttpServer(ctx, &Cfg); err != nil {
+		if err := startHttpServer(ctx); err != nil {
 			log.Fatalf("http error: %s", err)
 
 		}
@@ -82,30 +87,30 @@ func startGrpcServer(cfg *auth.Config, rep *repositories.Repository) error {
 
 	desc.RegisterAuthV1Server(grpcServer, auth.NewServerAuth(rep, cfg))
 
-	lis, err := net.Listen("tcp", cfg.GrpcAddress)
+	lis, err := net.Listen("tcp", grpcAddress)
 
 	if err != nil {
 		return err
 	}
 
-	log.Printf("gRPC server listening at: %s\n", cfg.GrpcAddress)
+	log.Printf("gRPC server listening at: %s\n", grpcAddress)
 
 	return grpcServer.Serve(lis)
 }
 
-func startHttpServer(ctx context.Context, cfg *auth.Config) error {
+func startHttpServer(ctx context.Context) error {
 	mux := runtime.NewServeMux()
 
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
-	err := desc.RegisterAuthV1HandlerFromEndpoint(ctx, mux, cfg.GrpcAddress, opts)
+	err := desc.RegisterAuthV1HandlerFromEndpoint(ctx, mux, grpcAddress, opts)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("http server listening at: %s\n", cfg.HttpAddress)
+	log.Printf("http server listening at: %s\n", httpAddress)
 
-	return http.ListenAndServe(cfg.HttpAddress, mux)
+	return http.ListenAndServe(httpAddress, mux)
 }
