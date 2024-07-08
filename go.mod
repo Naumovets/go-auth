@@ -3,7 +3,7 @@ module github.com/Naumovets/go-auth
 go 1.22.4
 
 require (
-	google.golang.org/grpc v1.64.0
+	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 )
 
@@ -11,6 +11,8 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-pg/pg v8.0.7+incompatible
 	github.com/golang-migrate/migrate/v4 v4.17.1
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094
 )
 
 require (
@@ -43,8 +45,8 @@ require (
 require (
 	github.com/spf13/viper v1.19.0
 	golang.org/x/crypto v0.25.0
-	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240624140628-dc46fd24d27d // indirect
 )

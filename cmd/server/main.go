@@ -1,21 +1,21 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"net"
+	"net/http"
 	"os"
+	"sync"
 
 	"github.com/Naumovets/go-auth/internal/auth"
 	"github.com/Naumovets/go-auth/internal/db/postgres"
 	"github.com/Naumovets/go-auth/internal/repositories"
 	desc "github.com/Naumovets/go-auth/pkg/auth_v1"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-)
-
-const (
-	grpcPort = 50051
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	authCfg, err := auth.NewConfig(".auth.env")
+	Cfg, err := auth.NewConfig(".auth.env")
 
 	if err != nil {
 		log.Fatalf("err: %s\n", err)
@@ -48,17 +48,64 @@ func main() {
 		os.Exit(2)
 	}
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
+	ctx := context.Background()
+
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+
+		if err := startGrpcServer(&Cfg, rep); err != nil {
+			log.Fatalf("gRPC error: %s", err)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		if err := startHttpServer(ctx, &Cfg); err != nil {
+			log.Fatalf("http error: %s", err)
+
+		}
+	}()
+
+	wg.Wait()
+}
+
+func startGrpcServer(cfg *auth.Config, rep *repositories.Repository) error {
+	grpcServer := grpc.NewServer(
+		grpc.Creds(insecure.NewCredentials()),
+	)
+
+	reflection.Register(grpcServer)
+
+	desc.RegisterAuthV1Server(grpcServer, auth.NewServerAuth(rep, cfg))
+
+	lis, err := net.Listen("tcp", cfg.GrpcAddress)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	s := grpc.NewServer()
-	reflection.Register(s)
-	desc.RegisterAuthV1Server(s, auth.NewServerAuth(rep, &authCfg))
+	log.Printf("gRPC server listening at: %s\n", cfg.GrpcAddress)
 
-	if err = s.Serve(lis); err != nil {
-		log.Fatal(err)
+	return grpcServer.Serve(lis)
+}
+
+func startHttpServer(ctx context.Context, cfg *auth.Config) error {
+	mux := runtime.NewServeMux()
+
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
+
+	err := desc.RegisterAuthV1HandlerFromEndpoint(ctx, mux, cfg.GrpcAddress, opts)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("http server listening at: %s\n", cfg.HttpAddress)
+
+	return http.ListenAndServe(cfg.HttpAddress, mux)
 }

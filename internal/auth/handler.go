@@ -4,10 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Naumovets/go-auth/internal/entities"
 	"github.com/Naumovets/go-auth/internal/utils"
 	desc "github.com/Naumovets/go-auth/pkg/auth_v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func (s *serverAuth) Register(ctx context.Context, req *desc.RegisterRequest) (*desc.RegisterResponse, error) {
@@ -124,8 +129,27 @@ func (s *serverAuth) GetUsersById(ctx context.Context, req *desc.GetUsersByIdReq
 		Users: resUser,
 	}, nil
 }
-func (s *serverAuth) GetUserInfo(ctx context.Context, req *desc.GetUserInfoRequest) (*desc.GetUserInfoResponse, error) {
-	claims, err := utils.VerifyToken(req.GetAccessToken(), []byte(s.cfg.refreshTokenSecretKey))
+func (s *serverAuth) GetUserInfo(ctx context.Context, req *emptypb.Empty) (*desc.GetUserInfoResponse, error) {
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.DataLoss, "failed to get metadata")
+	}
+	authToken := md.Get("authorization")[0]
+	if len(authToken) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "missing 'Authorization' header")
+	}
+	if strings.Trim(authToken, " ") == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "empty 'Authorization' header")
+	}
+
+	if !strings.HasPrefix(authToken, authPrefix) {
+		return nil, errors.New("invalid authorization header format")
+	}
+
+	accessToken := strings.TrimPrefix(authToken, authPrefix)
+
+	claims, err := utils.VerifyToken(accessToken, []byte(s.cfg.refreshTokenSecretKey))
 	if err != nil {
 		return nil, fmt.Errorf("error: %s", err)
 	}

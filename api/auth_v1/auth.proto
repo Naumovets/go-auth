@@ -2,15 +2,47 @@ syntax = "proto3";
 
 package auth_v1;
 
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
 option go_package = "github.com/Naumovets/go-auth/pkg/auth_v1;auth_v1";
 
 service AuthV1 {
-    rpc Register (RegisterRequest) returns (RegisterResponse);
-    rpc Login (LoginRequest) returns (LoginResponse);
-    rpc GetUsersById (GetUsersByIdRequest) returns (GetUsersByIdResponse);
-    rpc GetUserInfo (GetUserInfoRequest) returns (GetUserInfoResponse);
-    rpc GetRefreshToken (GetRefreshTokenRequest) returns (GetRefreshTokenResponse);
-    rpc GetAccessToken (GetAccessTokenRequest) returns (GetAccessTokenResponse);
+    rpc Register (RegisterRequest) returns (RegisterResponse){
+        option (google.api.http) = {
+            post: "/v1/auth/register"
+            body: "*"
+        };
+    }
+    rpc Login (LoginRequest) returns (LoginResponse){
+        option (google.api.http) = {
+            post: "/v1/auth/login"
+            body: "*"
+        };
+    }
+    rpc GetUsersById (GetUsersByIdRequest) returns (GetUsersByIdResponse){
+        option (google.api.http) = {
+            post: "/v1/users/list"
+            body: "*"
+        };
+    }
+    rpc GetUserInfo (google.protobuf.Empty) returns (GetUserInfoResponse){
+        option (google.api.http) = {
+            get: "/v1/users/me"
+        };
+    }
+    rpc GetRefreshToken (GetRefreshTokenRequest) returns (GetRefreshTokenResponse){
+        option (google.api.http) = {
+            post: "/v1/auth/refresh"
+            body: "*"
+        };
+    }
+    rpc GetAccessToken (GetAccessTokenRequest) returns (GetAccessTokenResponse){
+        option (google.api.http) = {
+            post: "/v1/auth/access"
+            body: "*"
+        };
+    }
 }
 
 message User {
@@ -20,10 +52,6 @@ message User {
 
 message GetUserInfoResponse {
     User user = 1;
-}
-
-message GetUserInfoRequest {
-    string access_token = 1;
 }
 
 message GetUsersByIdRequest {
