@@ -9,8 +9,8 @@ import (
 
 const (
 	authPrefix             = "Bearer "
-	refreshTokenExpiration = 60 * time.Minute
-	accessTokenExpiration  = 5 * time.Minute
+	refreshTokenExpiration = 30 * 25 * time.Hour
+	accessTokenExpiration  = 60 * time.Minute
 )
 
 type serverAuth struct {

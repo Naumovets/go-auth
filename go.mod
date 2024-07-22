@@ -12,6 +12,7 @@ require (
 	github.com/go-pg/pg v8.0.7+incompatible
 	github.com/golang-migrate/migrate/v4 v4.17.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
+	github.com/rs/cors v1.11.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094
 )
 

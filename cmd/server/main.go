@@ -13,6 +13,7 @@ import (
 	"github.com/Naumovets/go-auth/internal/repositories"
 	desc "github.com/Naumovets/go-auth/pkg/auth_v1"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -110,7 +111,16 @@ func startHttpServer(ctx context.Context) error {
 		return err
 	}
 
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowCredentials: true,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"*"},
+	})
+
+	handler := c.Handler(mux)
+
 	log.Printf("http server listening at: %s\n", httpAddress)
 
-	return http.ListenAndServe(httpAddress, mux)
+	return http.ListenAndServe(httpAddress, handler)
 }

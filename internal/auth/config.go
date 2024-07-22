@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	refreshTokenSecretKey string `mapstructure:"REFRESH_TOKEN_SECRET"`
-	accessTokenSecretKey  string `mapstructure:"ACCESS_TOKEN_SECRET"`
+	RefreshTokenSecretKey string `mapstructure:"REFRESH_TOKEN_SECRET"`
+	AccessTokenSecretKey  string `mapstructure:"ACCESS_TOKEN_SECRET"`
 }
 
 func NewConfig(path string) (Config, error) {

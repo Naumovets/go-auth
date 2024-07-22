@@ -24,7 +24,7 @@ func (s *serverAuth) Register(ctx context.Context, req *desc.RegisterRequest) (*
 	}
 
 	if exists {
-		return nil, errors.New("error register: user already exists")
+		return nil, status.Error(codes.AlreadyExists, "error register: user already exists")
 	}
 
 	user := &entities.User{
@@ -40,7 +40,7 @@ func (s *serverAuth) Register(ctx context.Context, req *desc.RegisterRequest) (*
 
 	refresh_token, err := utils.GenerateToken(
 		*user,
-		[]byte(s.cfg.refreshTokenSecretKey),
+		[]byte(s.cfg.RefreshTokenSecretKey),
 		refreshTokenExpiration,
 	)
 
@@ -64,7 +64,7 @@ func (s *serverAuth) Login(ctx context.Context, req *desc.LoginRequest) (*desc.L
 
 	refresh_token, err := utils.GenerateToken(
 		*user,
-		[]byte(s.cfg.refreshTokenSecretKey),
+		[]byte(s.cfg.RefreshTokenSecretKey),
 		refreshTokenExpiration,
 	)
 
@@ -75,7 +75,7 @@ func (s *serverAuth) Login(ctx context.Context, req *desc.LoginRequest) (*desc.L
 	return &desc.LoginResponse{RefreshToken: refresh_token}, nil
 }
 func (s *serverAuth) GetRefreshToken(ctx context.Context, req *desc.GetRefreshTokenRequest) (*desc.GetRefreshTokenResponse, error) {
-	claims, err := utils.VerifyToken(req.GetRefreshToken(), []byte(s.cfg.refreshTokenSecretKey))
+	claims, err := utils.VerifyToken(req.GetRefreshToken(), []byte(s.cfg.RefreshTokenSecretKey))
 	if err != nil {
 		return nil, fmt.Errorf("error: %s", err)
 	}
@@ -84,7 +84,7 @@ func (s *serverAuth) GetRefreshToken(ctx context.Context, req *desc.GetRefreshTo
 		Username: claims.Username,
 		Id:       claims.Id,
 	},
-		[]byte(s.cfg.refreshTokenSecretKey),
+		[]byte(s.cfg.RefreshTokenSecretKey),
 		refreshTokenExpiration,
 	)
 	if err != nil {
@@ -93,7 +93,7 @@ func (s *serverAuth) GetRefreshToken(ctx context.Context, req *desc.GetRefreshTo
 	return &desc.GetRefreshTokenResponse{RefreshToken: refreshToken}, nil
 }
 func (s *serverAuth) GetAccessToken(ctx context.Context, req *desc.GetAccessTokenRequest) (*desc.GetAccessTokenResponse, error) {
-	claims, err := utils.VerifyToken(req.GetRefreshToken(), []byte(s.cfg.refreshTokenSecretKey))
+	claims, err := utils.VerifyToken(req.GetRefreshToken(), []byte(s.cfg.RefreshTokenSecretKey))
 	if err != nil {
 		return nil, fmt.Errorf("error: %s", err)
 	}
@@ -102,7 +102,7 @@ func (s *serverAuth) GetAccessToken(ctx context.Context, req *desc.GetAccessToke
 		Username: claims.Username,
 		Id:       claims.Id,
 	},
-		[]byte(s.cfg.accessTokenSecretKey),
+		[]byte(s.cfg.AccessTokenSecretKey),
 		accessTokenExpiration,
 	)
 	if err != nil {
@@ -135,7 +135,8 @@ func (s *serverAuth) GetUserInfo(ctx context.Context, req *emptypb.Empty) (*desc
 	if !ok {
 		return nil, status.Errorf(codes.DataLoss, "failed to get metadata")
 	}
-	authToken := md.Get("authorization")[0]
+	authToken := md.Get("Authorization")[0]
+
 	if len(authToken) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "missing 'Authorization' header")
 	}
@@ -144,12 +145,12 @@ func (s *serverAuth) GetUserInfo(ctx context.Context, req *emptypb.Empty) (*desc
 	}
 
 	if !strings.HasPrefix(authToken, authPrefix) {
-		return nil, errors.New("invalid authorization header format")
+		return nil, errors.New("invalid Authorization header format")
 	}
 
 	accessToken := strings.TrimPrefix(authToken, authPrefix)
 
-	claims, err := utils.VerifyToken(accessToken, []byte(s.cfg.refreshTokenSecretKey))
+	claims, err := utils.VerifyToken(accessToken, []byte(s.cfg.AccessTokenSecretKey))
 	if err != nil {
 		return nil, fmt.Errorf("error: %s", err)
 	}
